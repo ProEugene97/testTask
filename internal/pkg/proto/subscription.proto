@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package proto;
+
+message SubRequest {
+  repeated string Sports = 1;
+  int32 Seconds = 2;
+}
+
+message Line {
+  string Sport = 1;
+  string Coef = 2;
+}
+
+message SubResponse {
+  repeated Line Lines = 1;
+}
+
+service SubService {
+  rpc SubscribeOnSportsLines(stream SubRequest) returns (stream SubResponse) {}
+}
