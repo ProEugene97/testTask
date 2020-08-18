@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	"testTask/internal/pkg/models"
@@ -52,13 +51,9 @@ func (rd *RedisDB) Get(sports []string) ([]models.Line, error) {
 	}
 
 	coefs, err := redis.Strings(conn.Do("MGET", tmp...))
-	if err == redis.ErrNil {
-		return nil, errors.Wrap(redis.ErrNil, "empty database")
-	} else if err != nil {
-		return nil, errors.Wrap(err, "redis error")
+	if err != nil {
+		return nil, errors.Wrap(err, "function Get()")
 	}
-	fmt.Println(sports)
-	fmt.Println(coefs)
 
 	lines := make([]models.Line, len(sports))
 	for i := 0; i < len(sports); i++ {
@@ -67,11 +62,11 @@ func (rd *RedisDB) Get(sports []string) ([]models.Line, error) {
 			Coef:  coefs[i],
 		}
 	}
-	fmt.Println(lines)
+
 	return lines, nil
 }
 
-func (rd *RedisDB) Set(line models.Line) error {
+func (rd *RedisDB) Set(line *models.Line) error {
 	conn := rd.pool.Get()
 	defer conn.Close()
 	_, err := conn.Do("SET", line.Sport, line.Coef)

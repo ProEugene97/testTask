@@ -1,7 +1,10 @@
 package middleware
 
 import (
+	"context"
+	"fmt"
 	"go.uber.org/zap"
+	"math/rand"
 	"net/http"
 	"time"
 )
@@ -19,8 +22,14 @@ func NewMiddleware(logger *zap.Logger) Middleware {
 func (m *Middleware) LogMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		next.ServeHTTP(w, r)
+
+		ctx := r.Context()
+		reqId := fmt.Sprintf("%016x", rand.Int())[:10]
+		ctx = context.WithValue(ctx, "reqId", reqId)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 		m.logger.Info(r.URL.Path,
+			zap.String("reqId:", reqId),
 			zap.String("method", r.Method),
 			zap.String("remote_addr", r.RemoteAddr),
 			zap.String("url", r.URL.Path),

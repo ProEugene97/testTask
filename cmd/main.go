@@ -2,44 +2,57 @@ package main
 
 import (
 	"fmt"
-	"google.golang.org/grpc"
+	"go.uber.org/zap"
 	"log"
-	"net"
-	"net/http"
-	"testTask/internal/pkg/api"
+	"sync"
+	"testTask/internal/app/grpc"
+	"testTask/internal/app/http"
+	"testTask/internal/pkg/config"
 	"testTask/internal/pkg/database"
-	"testTask/internal/pkg/proto"
+	"testTask/internal/pkg/logger"
 	"testTask/internal/pkg/worker"
 )
 
 func main() {
-	rdb := database.NewRedisDB(database.NewPool("localhost:6379"))
-
-	sports := []string{"baseball", "soccer", "football"}
-	m :=  map[chan interface{}]bool{}
-	for _, sport := range sports {
-		ch := make(chan interface{}, 2)
-		m[ch] = false
-		go worker.NewWorker(3, sport, rdb, ch).Run()
+	c, err := config.GetConfig()
+	if err != nil {
+		log.Fatal("reading config error")
+	}
+	rdb := database.NewRedisDB(database.NewPool(c.Redis))
+	l := logger.NewLogger(c.LogLevel)
+	fmt.Println()
+	mu := &sync.Mutex{}
+	counter := 0
+	for i, sport := range c.Sports {
+		go worker.NewWorker(c.Provider, c.Timeouts[i], sport, rdb, l, &counter, mu).Run()
 	}
 
-	handler := api.NewHandler(rdb, m)
-	http.HandleFunc("/ready", handler.Status)
-	go http.ListenAndServe(":8080", nil)
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		err := http.NewHTTPServer(c.HttpHost + ":" + c.HttpPort, rdb, l, &counter, len(c.Sports)).Start();
+		if err != nil {
+			l.Error(err.Error(),
+				zap.String("func", "HTTPServer"),
+			)
+		}
+	}(wg)
 
-	server := grpc.NewServer()
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		for {
+			if counter == len(c.Sports) {
+				break
+			}
+		}
+		err := grpc.NewGRPCServer(c.GrpcHost + ":" + c.GrpcPort, rdb, l).Start()
+		if err != nil {
+			l.Error(err.Error(),
+				zap.String("func", "GRPCServer"),
+			)
+		}
+	}(wg)
 
-	proto.RegisterSubServiceServer(server, api.NewSubService(rdb))
-
-	for ch := range m {
-		<- ch
-	}
-	fmt.Println("here")
-
-	lis, ok := net.Listen("tcp", ":8001")
-	if ok != nil {
-		log.Fatalln("cant listet port", ok)
-	}
-	server.Serve(lis)
-
+	wg.Wait()
 }

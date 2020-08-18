@@ -2,9 +2,12 @@ package worker
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"testTask/internal/pkg/models"
 
 	//"strings"
@@ -14,59 +17,103 @@ import (
 )
 
 type Worker struct {
-	timeOut   int
-	sport     string
-	db 	      database.IDatabase
-	isFirst   bool
-	readyChan chan interface{}
+	url     string
+	timeOut int
+	sport   string
+	db 	    database.IDatabase
+	logger  *zap.Logger
+	counter *int
+	mu      *sync.Mutex
+	isReady bool
 }
 
-func NewWorker(timeOut int, sport string, db database.IDatabase, readyChan chan interface{}) *Worker {
+func NewWorker(
+	url string,
+	timeOut int,
+	sport string,
+	db database.IDatabase,
+	logger *zap.Logger,
+	counter *int,
+    mu *sync.Mutex) *Worker {
+
 	return &Worker{
+		url,
 		timeOut,
 		sport,
 		db,
+		logger,
+		counter,
+		mu,
 		false,
-		readyChan,
 	}
 }
 
 func (w *Worker) Run() {
+	timeout := 0
 	for {
-		resp, err := http.Get("http://localhost:8000/api/v1/lines/" + w.sport)
-		if err != nil {
-			fmt.Println(err)
-		}
+		time.Sleep(time.Duration(timeout) * time.Second)
 
-		m := map[string]map[string]string {}
-		err = json.NewDecoder(resp.Body).Decode(&m)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		timeout = w.timeOut
 
-		lines, ok := m["lines"]
-		if !ok {
+		resp, err := http.Get(w.url + w.sport)
+		if err != nil {
+			w.logger.Warn(
+				err.Error(),
+				zap.String("func", "http.Get()"),
+				zap.String("addr", w.url + w.sport),
+				zap.String("sport", w.sport),
+			)
 			continue
 		}
 
-		coef, ok := lines[strings.ToUpper(w.sport)]
-		if !ok {
+		line, err := w.readResponse(resp.Body)
+		if err != nil {
+			w.logger.Error(
+				err.Error(),
+				zap.String("func", "readResponse"),
+				zap.String("addr", w.url + w.sport),
+				zap.String("sport", w.sport),
+			)
 			continue
 		}
 
-		err = w.db.Set(models.Line{ Sport: w.sport, Coef: coef})
+		err = w.db.Set(line)
 		if err != nil {
-			fmt.Println(err)
+			w.logger.Error(
+				err.Error(),
+				zap.String("func", "db.set"),
+				zap.String("addr", w.url + w.sport),
+				zap.String("sport", w.sport),
+			)
+			continue
 		}
 
-		if !w.isFirst {
-			w.isFirst = true
-			w.readyChan <- true
-			w.readyChan <- true
-		}
+		if !w.isReady {
+			w.isReady = true
+			w.mu.Lock()
+			*w.counter++
+			w.mu.Unlock()
 
-		timer := time.NewTimer(time.Duration(w.timeOut) * time.Second)
-		<-timer.C
+		}
 	}
+}
+
+func (w *Worker) readResponse(body io.ReadCloser) (*models.Line, error) {
+	m := map[string]map[string]string {}
+	err := json.NewDecoder(body).Decode(&m)
+	if err != nil {
+		return nil, errors.Wrap(err, "Decoding error: ")
+	}
+
+	lines, ok := m["lines"]
+	if !ok {
+		return nil, errors.Wrap(err, "There isn't lines field: ")
+	}
+
+	coef, ok := lines[strings.ToUpper(w.sport)]
+	if !ok {
+		return nil, errors.Wrap(err, "There isn't sport field: ")
+	}
+
+	return &models.Line{ Sport: w.sport, Coef: coef}, nil
 }

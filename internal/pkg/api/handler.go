@@ -1,43 +1,48 @@
 package api
 
 import (
+	"go.uber.org/zap"
 	"net/http"
 	"testTask/internal/pkg/database"
 )
 
 type Handler struct {
-	db database.IDatabase
-	isReady bool
-	readyChans map[chan interface{}]bool
+	db       database.IDatabase
+	logger   *zap.Logger
+	isReady   bool
+	counter *int
+	workers  int
 }
 
-func NewHandler(db database.IDatabase, readyChans map[chan interface{}]bool) *Handler {
+func NewHandler(db database.IDatabase, logger *zap.Logger, counter *int, workers int) *Handler {
 	return &Handler{
 		db,
+		logger,
 		false,
-		readyChans,
+		counter,
+		workers,
 	}
 }
 
-
 func (h *Handler) Status(w http.ResponseWriter, r *http.Request) {
 	if !h.isReady {
-		for ch := range h.readyChans {
-			if !h.readyChans[ch] {
-				select {
-				case <-ch:
-					h.readyChans[ch] = true
-				default:
-					w.WriteHeader(http.StatusNoContent)
-					return
-				}
-			}
+		if *h.counter < h.workers {
+			h.logger.Debug(
+				"Data isn't received from provider",
+				zap.String("func", "Status()"),
+				zap.Any("reqId", r.Context().Value("reqId")),
+				)
+			w.WriteHeader(http.StatusNoContent)
+			return
 		}
 		h.isReady = true
 	}
 
 	err := h.db.Ping()
 	if err != nil {
+		h.logger.Error(err.Error(),
+			zap.Any("reqId", r.Context().Value("reqId")),
+			)
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}

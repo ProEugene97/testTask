@@ -17,5 +17,5 @@ message SubResponse {
 }
 
 service SubService {
-  rpc SubscribeOnSportsLines(stream SubRequest) returns (stream SubResponse) {}
+  rpc SubscribeOnSportsLines(stream SubRequest) returns (stream SubResponse);
 }

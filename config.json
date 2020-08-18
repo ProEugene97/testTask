@@ -1,0 +1,19 @@
+{
+    "linesProvider": "http://localhost:8000/api/v1/lines/",
+    "redis": "localhost:6379",
+    "level": "INFO",
+    "http": {
+    "host":     "127.0.0.1",
+    "port":     "8002"
+  },
+    "grpc": {
+    "host":     "127.0.0.1",
+    "port":     "8001"
+  },
+    "sports": ["baseball", "soccer", "football"],
+    "timeouts": {
+      "baseball": 1,
+      "soccer": 2,
+      "football": 3
+    }
+}
