@@ -31,7 +31,7 @@ func main() {
 	wg.Add(2)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
-		err := http.NewHTTPServer(c.HttpHost+":"+c.HttpPort, rdb, l, &counter, len(c.Sports)).Start()
+		err := http.NewServer(c.HTTPHost+":"+c.HTTPPort, rdb, l, &counter, len(c.Sports)).Start()
 		if err != nil {
 			l.Error(err.Error(),
 				zap.String("func", "HTTPServer"),
@@ -46,7 +46,7 @@ func main() {
 				break
 			}
 		}
-		err := grpc.NewGRPCServer(c.GrpcHost+":"+c.GrpcPort, rdb, l).Start()
+		err := grpc.NewServer(c.GRPCHost+":"+c.GRPCPort, rdb, l).Start()
 		if err != nil {
 			l.Error(err.Error(),
 				zap.String("func", "GRPCServer"),

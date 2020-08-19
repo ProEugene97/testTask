@@ -68,8 +68,8 @@ func TestHandler_Status(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		ctx := r.Context()
-		reqId := fmt.Sprintf("%016x", rand.Int())[:10]
-		ctx = context.WithValue(ctx, models.ContextKey{}, reqId)
+		reqID := fmt.Sprintf("%016x", rand.Int())[:10]
+		ctx = context.WithValue(ctx, models.ContextKey{}, reqID)
 		r = r.WithContext(ctx)
 
 		if item.Counter >= item.Workers {
@@ -87,7 +87,11 @@ func TestHandler_Status(t *testing.T) {
 		handler.Status(w, r)
 
 		resp := w.Result()
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("[%d] wrong status Error: got %+v, expected: %v",
+				caseNum, err, nil)
+		}
 		bodyStr := string(body)
 
 		if item.Status != resp.StatusCode {

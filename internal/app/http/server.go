@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type HTTPServer struct {
+type Server struct {
 	addr    string
 	db      database.IDatabase
 	logger  *zap.Logger
@@ -18,8 +18,8 @@ type HTTPServer struct {
 	workers int
 }
 
-func NewHTTPServer(addr string, db database.IDatabase, logger *zap.Logger, counter *int, workers int) *HTTPServer {
-	return &HTTPServer{
+func NewServer(addr string, db database.IDatabase, logger *zap.Logger, counter *int, workers int) *Server {
+	return &Server{
 		addr,
 		db,
 		logger,
@@ -28,7 +28,7 @@ func NewHTTPServer(addr string, db database.IDatabase, logger *zap.Logger, count
 	}
 }
 
-func (hs *HTTPServer) Start() error {
+func (hs *Server) Start() error {
 	r := mux.NewRouter()
 	m := middleware.NewMiddleware(hs.logger)
 	handler := api.NewHandler(hs.db, hs.logger, hs.counter, hs.workers)

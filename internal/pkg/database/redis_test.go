@@ -47,8 +47,6 @@ func TestHandler_Get(t *testing.T) {
 			tmp[i] = sport
 		}
 
-		//var cmd *redigomock.Cmd
-
 		if item.Error {
 			conn.Command("MGET", tmp...).ExpectError(fmt.Errorf("error"))
 		} else {

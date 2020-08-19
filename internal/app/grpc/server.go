@@ -13,21 +13,21 @@ import (
 	"time"
 )
 
-type GRPCServer struct {
+type Server struct {
 	addr   string
 	db     database.IDatabase
 	logger *zap.Logger
 }
 
-func NewGRPCServer(addr string, db database.IDatabase, logger *zap.Logger) *GRPCServer {
-	return &GRPCServer{
+func NewServer(addr string, db database.IDatabase, logger *zap.Logger) *Server {
+	return &Server{
 		addr,
 		db,
 		logger,
 	}
 }
 
-func (gs *GRPCServer) Start() error {
+func (gs *Server) Start() error {
 	server := grpc.NewServer(
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			grpc_ctxtags.StreamServerInterceptor(),
