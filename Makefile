@@ -1,4 +1,8 @@
-.PHONY: build run stop
+.PHONY: build run stop build
+
+build: go-get
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+	go build -o main -i cmd/main.go
 
 test: go-get
 	go test ./...
