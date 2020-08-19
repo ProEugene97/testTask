@@ -20,7 +20,7 @@ type Worker struct {
 	url     string
 	timeOut int
 	sport   string
-	db 	    database.IDatabase
+	db      database.IDatabase
 	logger  *zap.Logger
 	counter *int
 	mu      *sync.Mutex
@@ -34,7 +34,7 @@ func NewWorker(
 	db database.IDatabase,
 	logger *zap.Logger,
 	counter *int,
-    mu *sync.Mutex) *Worker {
+	mu *sync.Mutex) *Worker {
 
 	return &Worker{
 		url,
@@ -60,7 +60,7 @@ func (w *Worker) Run() {
 			w.logger.Warn(
 				err.Error(),
 				zap.String("func", "http.Get()"),
-				zap.String("addr", w.url + w.sport),
+				zap.String("addr", w.url+w.sport),
 				zap.String("sport", w.sport),
 			)
 			continue
@@ -71,7 +71,7 @@ func (w *Worker) Run() {
 			w.logger.Error(
 				err.Error(),
 				zap.String("func", "readResponse"),
-				zap.String("addr", w.url + w.sport),
+				zap.String("addr", w.url+w.sport),
 				zap.String("sport", w.sport),
 			)
 			continue
@@ -82,7 +82,7 @@ func (w *Worker) Run() {
 			w.logger.Error(
 				err.Error(),
 				zap.String("func", "db.set"),
-				zap.String("addr", w.url + w.sport),
+				zap.String("addr", w.url+w.sport),
 				zap.String("sport", w.sport),
 			)
 			continue
@@ -99,7 +99,7 @@ func (w *Worker) Run() {
 }
 
 func (w *Worker) readResponse(body io.ReadCloser) (*models.Line, error) {
-	m := map[string]map[string]string {}
+	m := map[string]map[string]string{}
 	err := json.NewDecoder(body).Decode(&m)
 	if err != nil {
 		return nil, errors.Wrap(err, "Decoding error: ")
@@ -115,5 +115,5 @@ func (w *Worker) readResponse(body io.ReadCloser) (*models.Line, error) {
 		return nil, errors.Wrap(err, "There isn't sport field: ")
 	}
 
-	return &models.Line{ Sport: w.sport, Coef: coef}, nil
+	return &models.Line{Sport: w.sport, Coef: coef}, nil
 }

@@ -8,11 +8,11 @@ import (
 )
 
 type RedisDB struct {
-	pool  redis.Pool
+	pool *redis.Pool
 }
 
-func NewPool(addr string) redis.Pool {
-	return redis.Pool{
+func NewPool(addr string) *redis.Pool {
+	return &redis.Pool{
 		MaxIdle:     80,
 		MaxActive:   100,
 		IdleTimeout: 240 * time.Second,
@@ -35,13 +35,13 @@ func NewPool(addr string) redis.Pool {
 	}
 }
 
-func NewRedisDB(pool redis.Pool) *RedisDB {
+func NewRedisDB(pool *redis.Pool) *RedisDB {
 	return &RedisDB{
 		pool,
 	}
 }
 
-func (rd *RedisDB) Get(sports []string) ([]models.Line, error) {
+func (rd *RedisDB) Get(sports []string) ([]*models.Line, error) {
 	conn := rd.pool.Get()
 	defer conn.Close()
 
@@ -55,9 +55,14 @@ func (rd *RedisDB) Get(sports []string) ([]models.Line, error) {
 		return nil, errors.Wrap(err, "function Get()")
 	}
 
-	lines := make([]models.Line, len(sports))
-	for i := 0; i < len(sports); i++ {
-		lines[i] = models.Line{
+	l := len(sports)
+	if len(sports) > len(coefs) {
+		l = len(coefs)
+	}
+
+	lines := make([]*models.Line, l)
+	for i := 0; i < l; i++ {
+		lines[i] = &models.Line{
 			Sport: sports[i],
 			Coef:  coefs[i],
 		}
@@ -77,15 +82,13 @@ func (rd *RedisDB) Set(line *models.Line) error {
 	return nil
 }
 
-func (rd * RedisDB) Ping() error {
+func (rd *RedisDB) Ping() error {
 	conn := rd.pool.Get()
 	defer conn.Close()
-	pong := "PONG"
-	item, err := redis.String(conn.Do("PING", pong))
-	if err != nil || item != pong {
+	_, err := redis.String(conn.Do("PING"))
+	if err != nil {
 		return errors.Wrap(err, "redis error")
 	}
 
 	return nil
 }
-

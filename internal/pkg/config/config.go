@@ -12,7 +12,7 @@ type Config struct {
 	GrpcHost string
 	GrpcPort string
 	LogLevel string
-	Sports []string
+	Sports   []string
 	Timeouts []int
 }
 

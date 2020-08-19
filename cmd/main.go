@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"go.uber.org/zap"
 	"log"
 	"sync"
@@ -18,9 +17,10 @@ func main() {
 	if err != nil {
 		log.Fatal("reading config error")
 	}
+
 	rdb := database.NewRedisDB(database.NewPool(c.Redis))
 	l := logger.NewLogger(c.LogLevel)
-	fmt.Println()
+
 	mu := &sync.Mutex{}
 	counter := 0
 	for i, sport := range c.Sports {
@@ -31,7 +31,7 @@ func main() {
 	wg.Add(2)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
-		err := http.NewHTTPServer(c.HttpHost + ":" + c.HttpPort, rdb, l, &counter, len(c.Sports)).Start();
+		err := http.NewHTTPServer(c.HttpHost+":"+c.HttpPort, rdb, l, &counter, len(c.Sports)).Start()
 		if err != nil {
 			l.Error(err.Error(),
 				zap.String("func", "HTTPServer"),
@@ -46,7 +46,7 @@ func main() {
 				break
 			}
 		}
-		err := grpc.NewGRPCServer(c.GrpcHost + ":" + c.GrpcPort, rdb, l).Start()
+		err := grpc.NewGRPCServer(c.GrpcHost+":"+c.GrpcPort, rdb, l).Start()
 		if err != nil {
 			l.Error(err.Error(),
 				zap.String("func", "GRPCServer"),

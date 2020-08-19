@@ -14,9 +14,9 @@ import (
 )
 
 type GRPCServer struct {
-	addr    string
-	db      database.IDatabase
-	logger  *zap.Logger
+	addr   string
+	db     database.IDatabase
+	logger *zap.Logger
 }
 
 func NewGRPCServer(addr string, db database.IDatabase, logger *zap.Logger) *GRPCServer {
@@ -26,7 +26,6 @@ func NewGRPCServer(addr string, db database.IDatabase, logger *zap.Logger) *GRPC
 		logger,
 	}
 }
-
 
 func (gs *GRPCServer) Start() error {
 	server := grpc.NewServer(

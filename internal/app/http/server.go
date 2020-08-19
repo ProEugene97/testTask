@@ -28,7 +28,7 @@ func NewHTTPServer(addr string, db database.IDatabase, logger *zap.Logger, count
 	}
 }
 
-func (hs * HTTPServer) Start() error {
+func (hs *HTTPServer) Start() error {
 	r := mux.NewRouter()
 	m := middleware.NewMiddleware(hs.logger)
 	handler := api.NewHandler(hs.db, hs.logger, hs.counter, hs.workers)
@@ -38,8 +38,8 @@ func (hs * HTTPServer) Start() error {
 	r.Use(m.LogMiddleware)
 
 	srv := &http.Server{
-		Handler: r,
-		Addr:    hs.addr,
+		Handler:      r,
+		Addr:         hs.addr,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
@@ -47,7 +47,7 @@ func (hs * HTTPServer) Start() error {
 	hs.logger.Info("Start http server",
 		zap.String("addr", hs.addr),
 		zap.Time("start", time.Now()),
-		)
+	)
 
 	return srv.ListenAndServe()
 }

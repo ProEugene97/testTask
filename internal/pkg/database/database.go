@@ -5,7 +5,7 @@ import (
 )
 
 type IDatabase interface {
-	Get([]string) ([]models.Line, error)
+	Get([]string) ([]*models.Line, error)
 	Set(*models.Line) error
 	Ping() error
 }

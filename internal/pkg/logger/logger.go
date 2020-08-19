@@ -9,7 +9,6 @@ import (
 func NewLogger(level string) *zap.Logger {
 	atom := zap.NewAtomicLevel()
 
-
 	encoderCfg := zap.NewProductionEncoderConfig()
 
 	logger := zap.New(zapcore.NewCore(

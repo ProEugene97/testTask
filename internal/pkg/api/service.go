@@ -16,7 +16,7 @@ type SubService struct {
 }
 
 func NewSubService(db database.IDatabase, logger *zap.Logger) *SubService {
-	return &SubService {
+	return &SubService{
 		db,
 		logger,
 	}
@@ -33,7 +33,7 @@ func (s *SubService) SubscribeOnSportsLines(stream proto.SubService_SubscribeOnS
 
 		for {
 			select {
-			case <- ctx.Done():
+			case <-ctx.Done():
 				return nil
 			default:
 			}
@@ -42,10 +42,10 @@ func (s *SubService) SubscribeOnSportsLines(stream proto.SubService_SubscribeOnS
 				return nil
 			}
 			if err != nil {
-				return nil
+				return err
 			}
 			select {
-			case <- ctx.Done():
+			case <-ctx.Done():
 				return nil
 			default:
 				chData <- in
@@ -56,16 +56,16 @@ func (s *SubService) SubscribeOnSportsLines(stream proto.SubService_SubscribeOnS
 	eg.Go(func() error {
 		defer cancel()
 
-		sports := []string {}
+		sports := []string{}
 		var timeout int32 = 0
 		for {
 			time.Sleep(time.Duration(timeout) * time.Second)
 
 			select {
-			case sub := <- chData:
+			case sub := <-chData:
 				timeout = sub.Seconds
 				sports = sub.Sports
-			case <- ctx.Done():
+			case <-ctx.Done():
 				return nil
 			default:
 			}

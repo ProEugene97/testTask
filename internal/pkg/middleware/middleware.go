@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 	"math/rand"
 	"net/http"
+	"testTask/internal/pkg/models"
 	"time"
 )
 
@@ -24,12 +25,12 @@ func (m *Middleware) LogMiddleware(next http.Handler) http.Handler {
 		start := time.Now()
 
 		ctx := r.Context()
-		reqId := fmt.Sprintf("%016x", rand.Int())[:10]
-		ctx = context.WithValue(ctx, "reqId", reqId)
+		reqID := fmt.Sprintf("%016x", rand.Int())[:10]
+		ctx = context.WithValue(ctx, models.ContextKey{}, reqID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 		m.logger.Info(r.URL.Path,
-			zap.String("reqId:", reqId),
+			zap.String("reqId:", reqID),
 			zap.String("method", r.Method),
 			zap.String("remote_addr", r.RemoteAddr),
 			zap.String("url", r.URL.Path),
