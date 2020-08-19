@@ -1,4 +1,4 @@
-name: testTask build
+name: testTask
 
 on:
   push:
