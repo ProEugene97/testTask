@@ -11,6 +11,7 @@ lint: go-get
 	golangci-lint run
 
 go-get:
+	go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.30.0
 	go mod tidy
 
 run:
